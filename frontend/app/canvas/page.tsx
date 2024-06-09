@@ -11,13 +11,8 @@ export default function Home() {
     currCursorX: 0,
     currCursorY: 0,
   });
-  const [canvasDimensions, setCanvasDimensions] = useState({
-    width: 400,
-    height: 400,
-  });
-
+  
   const [toolType, setToolType] = useState<Tool>("line")
-  const [isErasing, setIsErasing] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
 
   const drawLine = (
@@ -69,17 +64,6 @@ export default function Home() {
     context.rect(x1, y1, x2 - x1, y2 - y1);
   };
 
-  useEffect(() => {
-    let canvasWidth = 400;
-    let canvasHeight = 400;
-
-    const canvasElement = canvasRef.current;
-    if (!canvasElement) return;
-
-    canvasElement.width = canvasWidth;
-    canvasElement.height = canvasHeight;
-  }, []);
-
   const handleTouchStart = (): void => {
     const context = canvasRef?.current?.getContext('2d');
     if (!context) return;
@@ -119,14 +103,14 @@ export default function Home() {
     if (!context) return;
 
     let color = 'black';
-    if (!isErasing)
+    if (toolType !== "eraser")
       drawLine(
         context,
         cursorCoordinates.prevCursorX,
         cursorCoordinates.prevCursorY,
         cursorCoordinates.currCursorX,
         cursorCoordinates.currCursorY,
-        { strokeColor: color, strokeWidth: 8 }
+        { strokeColor: color, strokeWidth: 8 } 
       );
     else
       erase(
@@ -145,6 +129,8 @@ export default function Home() {
   return (
     <div>
       <canvas
+        width={document.body.clientWidth - 16 }
+        height={document.body.clientHeight - 16 }
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
