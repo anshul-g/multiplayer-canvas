@@ -11,9 +11,15 @@ export default function Home() {
     currCursorX: 0,
     currCursorY: 0,
   });
-  
-  const [toolType, setToolType] = useState<Tool>("line")
+
+  const [startCoordinates, setStartCoordinates] = useState({
+    startX: 0,
+    startY: 0,
+  });
+  const [toolType, setToolType] = useState<Tool>('line');
   const [isDrawing, setIsDrawing] = useState(false);
+
+  const [elements, setElements] = useState<any[]>([]);
 
   const drawLine = (
     context: CanvasRenderingContext2D,
@@ -45,23 +51,24 @@ export default function Home() {
     }
   ) => {
     if (!context) return;
-    (context.fillStyle = 'white'), context.beginPath();
+    context.fillStyle = 'white';
+    context.beginPath();
     context.arc(x1, y1, 50, 0, 2 * Math.PI);
     context.closePath();
     context.fill();
   };
 
-  const drawRect = (
+  const renderRect = (
     context: CanvasRenderingContext2D,
     x1: number,
     y1: number,
     x2: number,
-    y2: number,
-    ...args: any
+    y2: number
   ) => {
     if (!context) return;
     context.beginPath();
-    context.rect(x1, y1, x2 - x1, y2 - y1);
+    context.strokeRect(x1, y1, x2 - x1, y2 - y1);
+    context.closePath();
   };
 
   const handleTouchStart = (): void => {
@@ -81,10 +88,19 @@ export default function Home() {
     setIsDrawing(false);
   };
 
-  const handleMouseDown = (): void => {
+  const handleMouseDown = (
+    event: React.MouseEvent<HTMLCanvasElement, MouseEvent>
+  ): void => {
     const context = canvasRef?.current?.getContext('2d');
     if (!context) return;
     setIsDrawing(true);
+
+    if (toolType !== 'eraser') {
+      setStartCoordinates({
+        startX: event.clientX,
+        startY: event.clientY,
+      });
+    }
   };
 
   const handleMouseMove = (
@@ -102,35 +118,91 @@ export default function Home() {
     const context = canvasRef?.current?.getContext('2d');
     if (!context) return;
 
+    context.clearRect(
+      0,
+      0,
+      canvasRef?.current?.width || 0,
+      canvasRef?.current?.height || 0
+    );
+
     let color = 'black';
-    if (toolType !== "eraser")
-      drawLine(
-        context,
-        cursorCoordinates.prevCursorX,
-        cursorCoordinates.prevCursorY,
-        cursorCoordinates.currCursorX,
-        cursorCoordinates.currCursorY,
-        { strokeColor: color, strokeWidth: 8 } 
-      );
-    else
-      erase(
-        context,
-        cursorCoordinates.currCursorX,
-        cursorCoordinates.currCursorY
-      );
+    elements.forEach((element) => {
+      switch (element.type as Tool) {
+        case 'circle':
+        // renderCircle
+        case 'rect':
+          renderRect(
+            context,
+            element.x1,
+            element.y1,
+            element.x2,
+            element.y2
+          );
+
+        // case 'line':
+        //   drawLine(
+        //     context,
+        //     element.x1,
+        //     element.y1,
+        //     element.x2,
+        //     element.y2,
+        //     { strokeColor: 'black', strokeWidth: 8 }
+        //   );
+        //   break;
+      }
+    });
+    
+    switch (toolType) {
+      case 'circle':
+      // renderCircle
+      case 'rect':
+        renderRect(
+          context,
+          startCoordinates.startX,
+          startCoordinates.startY,
+          cursorCoordinates.currCursorX,
+          cursorCoordinates.currCursorY,
+        );
+
+      case 'line':
+        drawLine(
+          context,
+          cursorCoordinates.prevCursorX,
+          cursorCoordinates.prevCursorY,
+          cursorCoordinates.currCursorX,
+          cursorCoordinates.currCursorY,
+          { strokeColor: 'black', strokeWidth: 8 }
+        );
+        break;
+    }
   };
 
   const handleMouseUp = (): void => {
     const context = canvasRef?.current?.getContext('2d');
     if (!context) return;
     setIsDrawing(false);
+
+    // store elements in the state
+    if (toolType !== 'eraser')
+      setElements([
+        ...elements,
+        {
+          type: toolType,
+          x1: startCoordinates.startX,
+          y1: startCoordinates.startY,
+          x2: cursorCoordinates.currCursorX,
+          y2: cursorCoordinates.currCursorY,
+        },
+      ]);
+
+    console.log(elements)
   };
 
   return (
     <div>
       <canvas
-        width={document.body.clientWidth - 16 }
-        height={document.body.clientHeight - 16 }
+        width={document.body.clientWidth - 16}
+        height={document.body.clientHeight - 16}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
