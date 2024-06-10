@@ -20,6 +20,7 @@ export default function Home() {
   const [isDrawing, setIsDrawing] = useState(false);
 
   const [elements, setElements] = useState<any[]>([]);
+  const [lineElement, setLineElement] = useState<any>({type: "line", coordinates: []})
 
   const drawLine = (
     context: CanvasRenderingContext2D,
@@ -34,6 +35,7 @@ export default function Home() {
     context.lineCap = 'round';
     context.strokeStyle = options?.strokeColor || 'black';
     context.lineWidth = options?.strokeWidth || 4;
+    
     context.beginPath();
     context.moveTo(x1, y1);
     context.lineTo(x2, y2);
@@ -118,12 +120,14 @@ export default function Home() {
     const context = canvasRef?.current?.getContext('2d');
     if (!context) return;
 
-    context.clearRect(
-      0,
-      0,
-      canvasRef?.current?.width || 0,
-      canvasRef?.current?.height || 0
-    );
+    if(toolType === "circle" || toolType==="rect"){
+      context.clearRect(
+        0,
+        0,
+        canvasRef?.current?.width || 0,
+        canvasRef?.current?.height || 0
+      );
+    
 
     let color = 'black';
     elements.forEach((element) => {
@@ -138,19 +142,25 @@ export default function Home() {
             element.x2,
             element.y2
           );
+          break;
 
-        // case 'line':
-        //   drawLine(
-        //     context,
-        //     element.x1,
-        //     element.y1,
-        //     element.x2,
-        //     element.y2,
-        //     { strokeColor: 'black', strokeWidth: 8 }
-        //   );
-        //   break;
+        case 'line':
+          for(let i=0; i<element?.coordinates?.length-1; i++){
+            console.log(element?.coordinates?.[i])
+            drawLine(
+              context,
+              element.coordinates?.[i]?.[0],
+              element.coordinates?.[i]?.[1],
+              element.coordinates?.[i+1]?.[0],
+              element.coordinates?.[i+1]?.[1],
+              { strokeColor: 'black', strokeWidth: 8 }
+            )
+          }
+          break;
       }
     });
+
+  }
     
     switch (toolType) {
       case 'circle':
@@ -163,6 +173,7 @@ export default function Home() {
           cursorCoordinates.currCursorX,
           cursorCoordinates.currCursorY,
         );
+        break;
 
       case 'line':
         drawLine(
@@ -173,9 +184,18 @@ export default function Home() {
           cursorCoordinates.currCursorY,
           { strokeColor: 'black', strokeWidth: 8 }
         );
+        setLineElement((prev: any) => {
+          return {
+            type: toolType,
+            coordinates: [
+              ...prev?.coordinates,
+              [event.clientX, event.clientY]
+            ]
+          }})
+
         break;
-    }
-  };
+        }
+        };
 
   const handleMouseUp = (): void => {
     const context = canvasRef?.current?.getContext('2d');
@@ -183,7 +203,7 @@ export default function Home() {
     setIsDrawing(false);
 
     // store elements in the state
-    if (toolType !== 'eraser')
+    if (toolType !== 'eraser' && toolType!=="line") {
       setElements([
         ...elements,
         {
@@ -194,8 +214,12 @@ export default function Home() {
           y2: cursorCoordinates.currCursorY,
         },
       ]);
-
-    console.log(elements)
+    } else if(toolType === "line"){
+      setElements([
+        ...elements,
+        lineElement
+      ])
+    }
   };
 
   return (
