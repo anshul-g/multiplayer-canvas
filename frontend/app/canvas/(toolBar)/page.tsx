@@ -11,7 +11,7 @@ export default function Toolbar({toolTypeHandler}: IProps) {
 
   return (
     <div
-      style={{display: 'flex', flexDirection: 'column', position: 'fixed', left: 16, top: '50%', 'transform': 'translateY(-50%)'}}
+      style={{display: 'flex', flexDirection: 'column', position: 'fixed', left: 16, top: '50%', 'transform': 'translateY(-50%)', gap: '8px'}}
     >
       <button onClick={() => onToolClick("eraser")}>E</button>
       <button onClick={() => onToolClick("rect")}>R</button>

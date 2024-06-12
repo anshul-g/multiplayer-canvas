@@ -31,6 +31,7 @@ export default function Home() {
     options?: { strokeColor?: string; strokeWidth?: number }
   ): void => {
     if (!context) return;
+    context.save();
     context.lineJoin = 'round';
     context.lineCap = 'round';
     context.strokeStyle = options?.strokeColor || 'black';
@@ -40,6 +41,7 @@ export default function Home() {
     context.moveTo(x1, y1);
     context.lineTo(x2, y2);
     context.stroke();
+    context.restore();
   };
 
   const erase = (
@@ -128,8 +130,7 @@ export default function Home() {
         canvasRef?.current?.height || 0
       );
     
-
-    let color = 'black';
+    const start = performance.now();
     elements.forEach((element) => {
       switch (element.type as Tool) {
         case 'circle':
@@ -146,7 +147,6 @@ export default function Home() {
 
         case 'line':
           for(let i=0; i<element?.coordinates?.length-1; i++){
-            console.log(element?.coordinates?.[i])
             drawLine(
               context,
               element.coordinates?.[i]?.[0],
@@ -159,6 +159,8 @@ export default function Home() {
           break;
       }
     });
+    const end = performance.now();
+    console.log(end-start)
 
   }
     
@@ -219,6 +221,7 @@ export default function Home() {
         ...elements,
         lineElement
       ])
+      setLineElement({type: toolType, coordinates: []})
     }
   };
 
