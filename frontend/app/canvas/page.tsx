@@ -166,7 +166,6 @@ export default function Home() {
     
     switch (toolType) {
       case 'circle':
-      // renderCircle
       case 'rect':
         renderRect(
           context,
