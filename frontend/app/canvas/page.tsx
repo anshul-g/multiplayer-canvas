@@ -44,22 +44,18 @@ export default function Home() {
     context.restore();
   };
 
-  const erase = (
+  const renderCircle = (
     context: CanvasRenderingContext2D,
     x1: number,
     y1: number,
-    options?: {
-      strokeColor?: string;
-      strokeWidth?: number;
-      eraserRadius?: number;
-    }
+    x2: number,
+    y2: number
   ) => {
+    const diameter = getDistance(x1, y1, x2, y2)
     if (!context) return;
-    context.fillStyle = 'white';
     context.beginPath();
-    context.arc(x1, y1, 50, 0, 2 * Math.PI);
-    context.closePath();
-    context.fill();
+    context.arc(x1, y1, diameter/2, 0, 2 * Math.PI);
+    context.stroke();
   };
 
   const renderRect = (
@@ -74,6 +70,10 @@ export default function Home() {
     context.strokeRect(x1, y1, x2 - x1, y2 - y1);
     context.closePath();
   };
+
+  const getDistance = (x1: number, y1: number, x2: number, y2: number) => {
+    return Math.sqrt(Math.pow(x1-x2, 2)) + Math.sqrt(Math.pow(y1-y2, 2))
+  }
 
   const handleTouchStart = (): void => {
     const context = canvasRef?.current?.getContext('2d');
@@ -134,7 +134,14 @@ export default function Home() {
     elements.forEach((element) => {
       switch (element.type as Tool) {
         case 'circle':
-        // renderCircle
+          renderCircle(
+            context, 
+            element.x1, 
+            element.y1,
+            element.x2,
+            element.y2
+          );
+          break;
         case 'rect':
           renderRect(
             context,
@@ -166,6 +173,14 @@ export default function Home() {
     
     switch (toolType) {
       case 'circle':
+        renderCircle(
+          context,
+          startCoordinates.startX,
+          startCoordinates.startY,
+          cursorCoordinates.currCursorX,
+          cursorCoordinates.currCursorY
+        )
+        break;
       case 'rect':
         renderRect(
           context,
