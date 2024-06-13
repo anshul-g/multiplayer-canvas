@@ -20,7 +20,10 @@ export default function Home() {
   const [isDrawing, setIsDrawing] = useState(false);
 
   const [elements, setElements] = useState<any[]>([]);
-  const [lineElement, setLineElement] = useState<any>({type: "line", coordinates: []})
+  const [lineElement, setLineElement] = useState<any>({
+    type: 'line',
+    coordinates: [],
+  });
 
   const drawLine = (
     context: CanvasRenderingContext2D,
@@ -36,7 +39,7 @@ export default function Home() {
     context.lineCap = 'round';
     context.strokeStyle = options?.strokeColor || 'black';
     context.lineWidth = options?.strokeWidth || 4;
-    
+
     context.beginPath();
     context.moveTo(x1, y1);
     context.lineTo(x2, y2);
@@ -51,10 +54,12 @@ export default function Home() {
     x2: number,
     y2: number
   ) => {
-    const diameter = getDistance(x1, y1, x2, y2)
     if (!context) return;
+    const diameter = getDistance(x1, y1, x2, y2);
+    const originX = x1 + (x2-x1)/2
+    const originY = y1 + (y2-y1)/2
     context.beginPath();
-    context.arc(x1, y1, diameter/2, 0, 2 * Math.PI);
+    context.arc(originX, originY, diameter / 2, 0, 2 * Math.PI);
     context.stroke();
   };
 
@@ -72,8 +77,8 @@ export default function Home() {
   };
 
   const getDistance = (x1: number, y1: number, x2: number, y2: number) => {
-    return Math.sqrt(Math.pow(x1-x2, 2)) + Math.sqrt(Math.pow(y1-y2, 2))
-  }
+    return Math.sqrt(Math.pow(x1 - x2, 2)) + Math.sqrt(Math.pow(y1 - y2, 2));
+  };
 
   const handleTouchStart = (): void => {
     const context = canvasRef?.current?.getContext('2d');
@@ -122,55 +127,48 @@ export default function Home() {
     const context = canvasRef?.current?.getContext('2d');
     if (!context) return;
 
-    if(toolType === "circle" || toolType==="rect"){
+    if (toolType === 'circle' || toolType === 'rect') {
       context.clearRect(
         0,
         0,
         canvasRef?.current?.width || 0,
         canvasRef?.current?.height || 0
       );
-    
-    const start = performance.now();
-    elements.forEach((element) => {
-      switch (element.type as Tool) {
-        case 'circle':
-          renderCircle(
-            context, 
-            element.x1, 
-            element.y1,
-            element.x2,
-            element.y2
-          );
-          break;
-        case 'rect':
-          renderRect(
-            context,
-            element.x1,
-            element.y1,
-            element.x2,
-            element.y2
-          );
-          break;
 
-        case 'line':
-          for(let i=0; i<element?.coordinates?.length-1; i++){
-            drawLine(
+      const start = performance.now();
+      elements.forEach((element) => {
+        switch (element.type as Tool) {
+          case 'circle':
+            renderCircle(
               context,
-              element.coordinates?.[i]?.[0],
-              element.coordinates?.[i]?.[1],
-              element.coordinates?.[i+1]?.[0],
-              element.coordinates?.[i+1]?.[1],
-              { strokeColor: 'black', strokeWidth: 8 }
-            )
-          }
-          break;
-      }
-    });
-    const end = performance.now();
-    console.log(end-start)
+              element.x1,
+              element.y1,
+              element.x2,
+              element.y2
+            );
+            break;
+          case 'rect':
+            renderRect(context, element.x1, element.y1, element.x2, element.y2);
+            break;
 
-  }
-    
+          case 'line':
+            for (let i = 0; i < element?.coordinates?.length - 1; i++) {
+              drawLine(
+                context,
+                element.coordinates?.[i]?.[0],
+                element.coordinates?.[i]?.[1],
+                element.coordinates?.[i + 1]?.[0],
+                element.coordinates?.[i + 1]?.[1],
+                { strokeColor: 'black', strokeWidth: 8 }
+              );
+            }
+            break;
+        }
+      });
+      const end = performance.now();
+      console.log(end - start);
+    }
+
     switch (toolType) {
       case 'circle':
         renderCircle(
@@ -179,7 +177,7 @@ export default function Home() {
           startCoordinates.startY,
           cursorCoordinates.currCursorX,
           cursorCoordinates.currCursorY
-        )
+        );
         break;
       case 'rect':
         renderRect(
@@ -187,7 +185,7 @@ export default function Home() {
           startCoordinates.startX,
           startCoordinates.startY,
           cursorCoordinates.currCursorX,
-          cursorCoordinates.currCursorY,
+          cursorCoordinates.currCursorY
         );
         break;
 
@@ -203,15 +201,13 @@ export default function Home() {
         setLineElement((prev: any) => {
           return {
             type: toolType,
-            coordinates: [
-              ...prev?.coordinates,
-              [event.clientX, event.clientY]
-            ]
-          }})
+            coordinates: [...prev?.coordinates, [event.clientX, event.clientY]],
+          };
+        });
 
         break;
-        }
-        };
+    }
+  };
 
   const handleMouseUp = (): void => {
     const context = canvasRef?.current?.getContext('2d');
@@ -219,7 +215,7 @@ export default function Home() {
     setIsDrawing(false);
 
     // store elements in the state
-    if (toolType !== 'eraser' && toolType!=="line") {
+    if (toolType !== 'eraser' && toolType !== 'line') {
       setElements([
         ...elements,
         {
@@ -230,12 +226,9 @@ export default function Home() {
           y2: cursorCoordinates.currCursorY,
         },
       ]);
-    } else if(toolType === "line"){
-      setElements([
-        ...elements,
-        lineElement
-      ])
-      setLineElement({type: toolType, coordinates: []})
+    } else if (toolType === 'line') {
+      setElements([...elements, lineElement]);
+      setLineElement({ type: toolType, coordinates: [] });
     }
   };
 
