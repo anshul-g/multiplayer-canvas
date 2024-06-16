@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from 'react';
 import Toolbar from './(toolBar)/page';
-import {renderRect, renderCircle, drawLine, getDistance, areCollinearPoints} from '../canvas/render.utils'
+import { renderRect, renderCircle, drawLine, areCollinearPoints } from '../canvas/render.utils'
 
 export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -53,7 +53,7 @@ export default function Home() {
             break;
 
           default:
-           break;
+            break;
         }
       });
 
@@ -62,27 +62,27 @@ export default function Home() {
     }
   }
   const drawExistingLines = (context: CanvasRenderingContext2D) => {
-    if(!context) return;
+    if (!context) return;
     context.save();
     context.beginPath();
     context.lineCap = 'round';
     elements.filter(ele => ele.type === "line")?.forEach(element => {
       // context.lineJoin = 'round';
-      context.strokeStyle ="black";
+      context.strokeStyle = "black";
       context.lineWidth = 8;
-      for(let i=0; i<element.coordinates.length; i++) {
+      for (let i = 0; i < element.coordinates.length; i++) {
         context.moveTo(element.coordinates?.[i]?.[0],
-        element.coordinates?.[i]?.[1]);
+          element.coordinates?.[i]?.[1]);
         context.lineTo(
-        element.coordinates?.[i + 1]?.[0],
-        element.coordinates?.[i + 1]?.[1])
-        }
+          element.coordinates?.[i + 1]?.[0],
+          element.coordinates?.[i + 1]?.[1])
+      }
     })
     context.stroke();
     context.restore();
   }
 
- 
+
 
   const handleTouchStart = (): void => {
     const context = canvasRef?.current?.getContext('2d');
@@ -126,7 +126,7 @@ export default function Home() {
       currCursorY: event.clientY,
     }));
 
-    
+
     if (!isDrawing) return;
     const context = canvasRef?.current?.getContext('2d');
     if (!context) return;
@@ -163,7 +163,7 @@ export default function Home() {
           cursorCoordinates.currCursorY,
           { strokeColor: 'black', strokeWidth: 8 }
         );
-        if(!areCollinearPoints([cursorCoordinates.currCursorX, cursorCoordinates.currCursorY], [cursorCoordinates.prevCursorX, cursorCoordinates.prevCursorY], lineElement?.coordinates?.[lineElCoordinatesLength - 1]))
+        if (!areCollinearPoints([cursorCoordinates.currCursorX, cursorCoordinates.currCursorY], [cursorCoordinates.prevCursorX, cursorCoordinates.prevCursorY], lineElement?.coordinates?.[lineElCoordinatesLength - 1]))
           setLineElement((prev: any) => {
             return {
               type: toolType,
