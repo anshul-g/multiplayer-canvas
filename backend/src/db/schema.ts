@@ -4,4 +4,6 @@ export const users = mysqlTable("users", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 256 }).notNull(),
   email: varchar("email", { length: 256 }).notNull().unique(),
+  username: varchar("username", { length: 64 }).notNull().unique(),
+  password: varchar("password", { length: 64 }).notNull().unique()
 });

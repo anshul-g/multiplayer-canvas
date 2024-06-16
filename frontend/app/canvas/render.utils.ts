@@ -8,7 +8,6 @@ export const drawLine = (
 ): void => {
   if (!context) return;
   context.save();
-  // context.lineJoin = 'round';
   context.lineCap = 'round';
   context.strokeStyle = options?.strokeColor || 'black';
   context.lineWidth = options?.strokeWidth || 4;
