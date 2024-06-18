@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Toolbar from './(toolBar)/page';
 import { renderRect, renderCircle, drawLine, areCollinearPoints } from '../canvas/render.utils'
+import io, { Socket } from 'socket.io-client';
 
 export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -25,6 +26,11 @@ export default function Home() {
     type: 'line',
     coordinates: [],
   });
+
+  useEffect(() => {
+    const newSocket = io('http://localhost:5000/')
+    newSocket.on('send state', () => { console.log("sending data...") })
+  }, []);
 
   const redrawFrame = (context: CanvasRenderingContext2D) => {
     if (toolType === 'circle' || toolType === 'rect') {
