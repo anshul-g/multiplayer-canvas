@@ -7,3 +7,4 @@ export const users = mysqlTable("users", {
   username: varchar("username", { length: 64 }).notNull().unique(),
   password: varchar("password", { length: 64 }).notNull().unique()
 });
+

@@ -28,8 +28,10 @@ export default function Home() {
   });
 
   useEffect(() => {
-    const newSocket = io('http://localhost:5000/')
-    newSocket.on('send state', () => { console.log("sending data...") })
+    const newSocket = io('http://localhost:5000', { transports: ["websocket"] })
+    console.log(newSocket);
+    newSocket.on('connection', () => { console.log("sending...") });
+    newSocket.emit('send state', (socket: any) => { console.log("sending data...") })
   }, []);
 
   const redrawFrame = (context: CanvasRenderingContext2D) => {
