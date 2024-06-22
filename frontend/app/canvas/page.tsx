@@ -34,24 +34,25 @@ export default function Home() {
     type: 'line',
     coordinates: [],
   });
-
+  
   useEffect(() => {
     socketManager.on('connection', (socket) => {
       socket.broadcast.emit(socket.id);
     });
-  });
-
+  }, []);
+  
   useEffect(() => {
     socketManager.on('recieveStateChange', (el) => {
+      setElements(el)
       const context = canvasRef?.current?.getContext('2d');
       if(!context) return;
-      redrawFrame(context )
-      setElements(el)
-    })
+      redrawFrame(context, el,  true)
+    }) 
   }, [])
-
-  const redrawFrame = (context: CanvasRenderingContext2D) => {
-    if(toolType === 'rect' || toolType === 'circle'){
+  
+  const redrawFrame = (context: CanvasRenderingContext2D, el: any, clearCanvas = false) => {
+    if(!elements.length && !el.length) return;
+    if(toolType === 'rect' || toolType === 'circle' || clearCanvas){
       context.clearRect(
         0,
         0,
@@ -60,9 +61,10 @@ export default function Home() {
       );
     }
 
-      const start = performance.now();
-      drawExistingLines(context);
-      elements.forEach((element: any) => {
+      drawExistingLines(context, el);
+      const x = el?.length ? el : elements
+
+      x.forEach((element: any) => {
         switch (element.type as Tool) {
           case 'circle':
             renderCircle(
@@ -81,20 +83,18 @@ export default function Home() {
             break;
         }
       });
-
-      const end = performance.now();
-      console.log(end - start);
   };
 
-  const drawExistingLines = (context: CanvasRenderingContext2D) => {
+  const drawExistingLines = (context: CanvasRenderingContext2D, el: any) => {
     if (!context) return;
     context.save();
     context.beginPath();
     context.lineCap = 'round';
-    elements
-      .filter((ele) => ele.type === 'line')
-      ?.forEach((element) => {
-        // context.lineJoin = 'round';
+    const x = el?.length ? el : elements
+    x
+      .filter((ele: any) => ele.type === 'line')
+      ?.forEach((element: any) => {
+        context.lineJoin = 'round';
         context.strokeStyle = 'black';
         context.lineWidth = 8;
         for (let i = 0; i < element.coordinates.length; i++) {
@@ -142,7 +142,7 @@ export default function Home() {
     if (!context) return;
     const lineElCoordinatesLength = lineElement.coordinates?.length;
 
-    redrawFrame(context);
+    redrawFrame(context, elements);
 
     switch (toolType) {
       case 'circle':
@@ -216,7 +216,6 @@ export default function Home() {
       setLineElement({ type: toolType, coordinates: [] });
     }
 
-    socketManager
     socketManager.emit("onStateChange", elements);
   };
 
