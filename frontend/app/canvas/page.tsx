@@ -34,25 +34,29 @@ export default function Home() {
     type: 'line',
     coordinates: [],
   });
-  
+
   useEffect(() => {
     socketManager.on('connection', (socket) => {
       socket.broadcast.emit(socket.id);
     });
   }, []);
-  
+
   useEffect(() => {
     socketManager.on('recieveStateChange', (el) => {
-      setElements(el)
+      setElements(el);
       const context = canvasRef?.current?.getContext('2d');
-      if(!context) return;
-      redrawFrame(context, el,  true)
-    }) 
-  }, [])
-  
-  const redrawFrame = (context: CanvasRenderingContext2D, el: any, clearCanvas = false) => {
-    if(!elements.length && !el.length) return;
-    if(toolType === 'rect' || toolType === 'circle' || clearCanvas){
+      if (!context) return;
+      redrawFrame(context, el, true);
+    });
+  }, []);
+
+  const redrawFrame = (
+    context: CanvasRenderingContext2D,
+    el: any,
+    clearCanvas = false
+  ) => {
+    if (!elements.length && !el.length) return;
+    if (toolType === 'rect' || toolType === 'circle' || clearCanvas) {
       context.clearRect(
         0,
         0,
@@ -61,28 +65,22 @@ export default function Home() {
       );
     }
 
-      drawExistingLines(context, el);
-      const x = el?.length ? el : elements
+    drawExistingLines(context, el);
+    const x = el?.length ? el : elements;
 
-      x.forEach((element: any) => {
-        switch (element.type as Tool) {
-          case 'circle':
-            renderCircle(
-              context,
-              element.x1,
-              element.y1,
-              element.x2,
-              element.y2
-            );
-            break;
-          case 'rect':
-            renderRect(context, element.x1, element.y1, element.x2, element.y2);
-            break;
+    x.forEach((element: any) => {
+      switch (element.type as Tool) {
+        case 'circle':
+          renderCircle(context, element.x1, element.y1, element.x2, element.y2);
+          break;
+        case 'rect':
+          renderRect(context, element.x1, element.y1, element.x2, element.y2);
+          break;
 
-          default:
-            break;
-        }
-      });
+        default:
+          break;
+      }
+    });
   };
 
   const drawExistingLines = (context: CanvasRenderingContext2D, el: any) => {
@@ -90,24 +88,22 @@ export default function Home() {
     context.save();
     context.beginPath();
     context.lineCap = 'round';
-    const x = el?.length ? el : elements
-    x
-      .filter((ele: any) => ele.type === 'line')
-      ?.forEach((element: any) => {
-        context.lineJoin = 'round';
-        context.strokeStyle = 'black';
-        context.lineWidth = 8;
-        for (let i = 0; i < element.coordinates.length; i++) {
-          context.moveTo(
-            element.coordinates?.[i]?.[0],
-            element.coordinates?.[i]?.[1]
-          );
-          context.lineTo(
-            element.coordinates?.[i + 1]?.[0],
-            element.coordinates?.[i + 1]?.[1]
-          );
-        }
-      });
+    const x = el?.length ? el : elements;
+    x.filter((ele: any) => ele.type === 'line')?.forEach((element: any) => {
+      context.lineJoin = 'round';
+      context.strokeStyle = 'black';
+      context.lineWidth = 8;
+      for (let i = 0; i < element.coordinates.length; i++) {
+        context.moveTo(
+          element.coordinates?.[i]?.[0],
+          element.coordinates?.[i]?.[1]
+        );
+        context.lineTo(
+          element.coordinates?.[i + 1]?.[0],
+          element.coordinates?.[i + 1]?.[1]
+        );
+      }
+    });
     context.stroke();
     context.restore();
   };
@@ -201,22 +197,28 @@ export default function Home() {
 
     // store elements in the state
     if (toolType !== 'eraser' && toolType !== 'line') {
-      setElements(prev => [
-        ...prev,
-        {
-          type: toolType,
-          x1: startCoordinates.startX,
-          y1: startCoordinates.startY,
-          x2: cursorCoordinates.currCursorX,
-          y2: cursorCoordinates.currCursorY,
-        },
-      ]);
+      setElements((prev) => {
+        const temp = [
+          ...prev,
+          {
+            type: toolType,
+            x1: startCoordinates.startX,
+            y1: startCoordinates.startY,
+            x2: cursorCoordinates.currCursorX,
+            y2: cursorCoordinates.currCursorY,
+          },
+        ]
+        socketManager.emit('onStateChange', temp);
+        return temp;
+      });
     } else if (toolType === 'line') {
-      setElements(prev => [...prev, lineElement]);
+      setElements((prev) => {
+        const temp = [...prev, lineElement]
+        socketManager.emit('onStateChange', temp);
+        return temp;
+      });
       setLineElement({ type: toolType, coordinates: [] });
     }
-
-    socketManager.emit("onStateChange", elements);
   };
 
   return (
