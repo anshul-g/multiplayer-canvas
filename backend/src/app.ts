@@ -19,12 +19,11 @@ const io = socketIo(server, {
 })
 
 io.on('connection', (socket: any) => {
-  console.log("connection established")
-  socket.on('send state', () => {
-    console.log("state recieved")
+  socket.on('onStateChange', (elements: any) => {
+    socket.broadcast.emit('recieveStateChange', elements)
   })
   socket.on('disconnect', () => {
-    console.log('User disconnected');
+    console.log('User disconnected', socket.id);
   });
 })
 

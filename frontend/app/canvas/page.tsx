@@ -2,10 +2,18 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import Toolbar from './(toolBar)/page';
-import { renderRect, renderCircle, drawLine, areCollinearPoints } from '../canvas/render.utils'
+import {
+  renderRect,
+  renderCircle,
+  drawLine,
+  areCollinearPoints,
+} from '../canvas/render.utils';
 import io, { Socket } from 'socket.io-client';
 
 export default function Home() {
+  const [socketManager, setSocketManager] = useState(() =>
+    io('http://localhost:5000/', { transports: ['websocket'] })
+  );
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [cursorCoordinates, setCursorCoordinates] = useState({
     prevCursorX: 0,
@@ -28,24 +36,33 @@ export default function Home() {
   });
 
   useEffect(() => {
-    const newSocket = io('http://localhost:5000', { transports: ["websocket"] })
-    console.log(newSocket);
-    newSocket.on('connection', () => { console.log("sending...") });
-    newSocket.emit('send state', (socket: any) => { console.log("sending data...") })
-  }, []);
+    socketManager.on('connection', (socket) => {
+      socket.broadcast.emit(socket.id);
+    });
+  });
+
+  useEffect(() => {
+    socketManager.on('recieveStateChange', (el) => {
+      const context = canvasRef?.current?.getContext('2d');
+      if(!context) return;
+      redrawFrame(context )
+      setElements(el)
+    })
+  }, [])
 
   const redrawFrame = (context: CanvasRenderingContext2D) => {
-    if (toolType === 'circle' || toolType === 'rect') {
+    if(toolType === 'rect' || toolType === 'circle'){
       context.clearRect(
         0,
         0,
         canvasRef?.current?.width || 0,
         canvasRef?.current?.height || 0
       );
+    }
 
       const start = performance.now();
-      drawExistingLines(context)
-      elements.forEach((element) => {
+      drawExistingLines(context);
+      elements.forEach((element: any) => {
         switch (element.type as Tool) {
           case 'circle':
             renderCircle(
@@ -67,46 +84,32 @@ export default function Home() {
 
       const end = performance.now();
       console.log(end - start);
-    }
-  }
+  };
+
   const drawExistingLines = (context: CanvasRenderingContext2D) => {
     if (!context) return;
     context.save();
     context.beginPath();
     context.lineCap = 'round';
-    elements.filter(ele => ele.type === "line")?.forEach(element => {
-      // context.lineJoin = 'round';
-      context.strokeStyle = "black";
-      context.lineWidth = 8;
-      for (let i = 0; i < element.coordinates.length; i++) {
-        context.moveTo(element.coordinates?.[i]?.[0],
-          element.coordinates?.[i]?.[1]);
-        context.lineTo(
-          element.coordinates?.[i + 1]?.[0],
-          element.coordinates?.[i + 1]?.[1])
-      }
-    })
+    elements
+      .filter((ele) => ele.type === 'line')
+      ?.forEach((element) => {
+        // context.lineJoin = 'round';
+        context.strokeStyle = 'black';
+        context.lineWidth = 8;
+        for (let i = 0; i < element.coordinates.length; i++) {
+          context.moveTo(
+            element.coordinates?.[i]?.[0],
+            element.coordinates?.[i]?.[1]
+          );
+          context.lineTo(
+            element.coordinates?.[i + 1]?.[0],
+            element.coordinates?.[i + 1]?.[1]
+          );
+        }
+      });
     context.stroke();
     context.restore();
-  }
-
-
-
-  const handleTouchStart = (): void => {
-    const context = canvasRef?.current?.getContext('2d');
-    if (!context) return;
-    setIsDrawing(true);
-  };
-
-  const handleTouchMove = (): void => {
-    const context = canvasRef?.current?.getContext('2d');
-    if (!context) return;
-  };
-
-  const handleTouchEnd = (): void => {
-    const context = canvasRef?.current?.getContext('2d');
-    if (!context) return;
-    setIsDrawing(false);
   };
 
   const handleMouseDown = (
@@ -133,7 +136,6 @@ export default function Home() {
       currCursorX: event.clientX,
       currCursorY: event.clientY,
     }));
-
 
     if (!isDrawing) return;
     const context = canvasRef?.current?.getContext('2d');
@@ -171,11 +173,20 @@ export default function Home() {
           cursorCoordinates.currCursorY,
           { strokeColor: 'black', strokeWidth: 8 }
         );
-        if (!areCollinearPoints([cursorCoordinates.currCursorX, cursorCoordinates.currCursorY], [cursorCoordinates.prevCursorX, cursorCoordinates.prevCursorY], lineElement?.coordinates?.[lineElCoordinatesLength - 1]))
+        if (
+          !areCollinearPoints(
+            [cursorCoordinates.currCursorX, cursorCoordinates.currCursorY],
+            [cursorCoordinates.prevCursorX, cursorCoordinates.prevCursorY],
+            lineElement?.coordinates?.[lineElCoordinatesLength - 1]
+          )
+        )
           setLineElement((prev: any) => {
             return {
               type: toolType,
-              coordinates: [...prev?.coordinates, [event.clientX, event.clientY]],
+              coordinates: [
+                ...prev?.coordinates,
+                [event.clientX, event.clientY],
+              ],
             };
           });
 
@@ -190,8 +201,8 @@ export default function Home() {
 
     // store elements in the state
     if (toolType !== 'eraser' && toolType !== 'line') {
-      setElements([
-        ...elements,
+      setElements(prev => [
+        ...prev,
         {
           type: toolType,
           x1: startCoordinates.startX,
@@ -201,9 +212,12 @@ export default function Home() {
         },
       ]);
     } else if (toolType === 'line') {
-      setElements([...elements, lineElement]);
+      setElements(prev => [...prev, lineElement]);
       setLineElement({ type: toolType, coordinates: [] });
     }
+
+    socketManager
+    socketManager.emit("onStateChange", elements);
   };
 
   return (
@@ -211,9 +225,6 @@ export default function Home() {
       <canvas
         width={document.body.clientWidth - 16}
         height={document.body.clientHeight - 16}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
